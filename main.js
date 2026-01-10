@@ -118,7 +118,6 @@ const elSteps = document.getElementById("steps");
 const elStatus = document.getElementById("status");
 const btnNext = document.getElementById("new");
 const btnRestart = document.getElementById("restart");
-const elWarn = document.getElementById("warn");
 
 
 // ====== Overlay（クリア/失敗演出） ======
@@ -161,24 +160,7 @@ function hideOverlay(){
   overlay.classList.remove("show");
 }
 
-function validateStage(){
-  const hasP = cells.includes("P");
-  const hasG = cells.includes("G");
 
-  const msgs = [];
-  if (!hasP) msgs.push("P（開始）がありません");
-  if (!hasG) msgs.push("G（ゴール）がありません");
-
-  if (msgs.length){
-    elWarn.style.display = "block";
-    elWarn.innerHTML = `<strong>警告:</strong> ${msgs.join(" / ")}<br>（このまま main.js に貼ると次へでエラーになります）`;
-    return false;
-  } else {
-    elWarn.style.display = "none";
-    elWarn.textContent = "";
-    return true;
-  }
-}
 
 
 // ====== ユーティリティ ======
@@ -446,6 +428,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
