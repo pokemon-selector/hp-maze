@@ -51,6 +51,8 @@ const elBoard = document.getElementById("board");
 const elHp = document.getElementById("hp");
 const elSteps = document.getElementById("steps");
 const elStatus = document.getElementById("status");
+const btnNext = document.getElementById("new");
+const btnRestart = document.getElementById("restart");
 
 // ====== ユーティリティ ======
 function setStatus(text){
@@ -108,6 +110,9 @@ function loadStage(i){
   steps = 0;
   setStatus(`探索中: ${stage.name}`);
   render();
+
+  btnNext.disabled = true;
+  btnNext.classList.remove("primary");
 }
 
 function canEnter(x,y){
@@ -137,14 +142,17 @@ function onEnterTile(x,y){
 
 function checkGoalOrDead(){
   if (player.x === goal.x && player.y === goal.y) {
-    setStatus(`クリア！: ${STAGES[stageIndex].name}  (Nで次へ)`);
+    setStatus(`クリア！: ${STAGES[stageIndex].name}`);
+    btnNext.disabled = false;
+    btnNext.classList.add("primary");
     return;
   }
   if (hp <= 0) {
-    setStatus(`力尽きた…: ${STAGES[stageIndex].name}  (Rで再挑戦)`);
+    setStatus(`力尽きた…: ${STAGES[stageIndex].name}`);
+    btnNext.disabled = true;
+    btnNext.classList.remove("primary");
   }
 }
-
 function tryMove(dir){
   if (!status.startsWith("探索中")) return;
   if (hp <= 0) { checkGoalOrDead(); render(); return; }
@@ -290,4 +298,5 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
