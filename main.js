@@ -36,11 +36,11 @@ const STAGES = [
   hp: 18,
   map: [
     "1111111111",
+    "1P11111G11",
     "1011111011",
     "1011111011",
     "1011111011",
-    "1011111011",
-    "100B000001",
+    "100000B001",
     "1111111111",
     "1111111111",
     "1111111111",
@@ -425,6 +425,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
