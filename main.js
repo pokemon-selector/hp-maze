@@ -1,3 +1,8 @@
+if (window.__HP_MAZE_LOADED__) {
+  console.warn("main.js loaded twice");
+} else {
+  window.__HP_MAZE_LOADED__ = true;
+
 // ====== 設定 ======
 const SIZE = { w: 17, h: 13 };
 const START_HP = 20;
@@ -76,7 +81,13 @@ function canMove(x,y){
   return maze[y] && maze[y][x] === 0;
 }
 
+let lastMoveAt = 0;
+  
 function tryMove(dir){
+  const now = performance.now();
+  if (now - lastMoveAt < 80) return; // 80ms以内の連続入力は無視
+  lastMoveAt = now;
+  
   if (status !== "探索中") return;
 
   const delta = {
@@ -162,6 +173,7 @@ document.getElementById("new").addEventListener("click", ()=>init(true));
 // 起動
 init(true);
 
+}
 
 
 
