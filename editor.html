@@ -14,10 +14,12 @@
     h1{ margin:0 0 10px; font-size:16px; }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
     label{ font-size:13px; opacity:.95; }
-    input[type="number"]{
-      width:80px; padding:8px; border-radius:10px; border:1px solid #2a3140;
+    input[type="number"], input[type="text"]{
+      padding:8px 10px; border-radius:10px; border:1px solid #2a3140;
       background:#141824; color:#fff;
     }
+    input[type="number"]{ width:90px; }
+    input[type="text"]{ width:220px; }
     select{
       padding:10px 10px; border-radius:12px; border:1px solid #2a3140;
       background:#141824; color:#fff; font-weight:700;
@@ -48,7 +50,6 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size:14px;
       font-weight:800;
-      position:relative;
     }
     .wall{ background:#1b1f27; }
     .twoCol{
@@ -61,8 +62,8 @@
       .twoCol{ grid-template-columns: auto 1fr; }
     }
     textarea{
-      width:min(720px, 100%);
-      height:260px;
+      width:min(820px, 100%);
+      height:300px;
       padding:12px;
       border-radius:14px;
       border:1px solid #2a3140;
@@ -84,14 +85,24 @@
       font-weight:800;
       font-size:12px;
     }
+    .hintBox{
+      padding:10px 12px;
+      border:1px solid #2a3140;
+      border-radius:14px;
+      background:#121622;
+      font-size:12px;
+      opacity:.9;
+      line-height:1.5;
+      margin-bottom:10px;
+    }
   </style>
 </head>
 <body>
-  <h1>ステージエディタ（0/1 + タイル配置）</h1>
+  <h1>ステージエディタ（0/1 + タイル配置 / name・hp対応）</h1>
 
   <div class="row">
-    <label>幅(W) <input id="w" type="number" min="3" value="25"></label>
-    <label>高さ(H) <input id="h" type="number" min="3" value="13"></label>
+    <label>幅(W) <input id="w" type="number" min="3" value="10"></label>
+    <label>高さ(H) <input id="h" type="number" min="3" value="10"></label>
 
     <label><input id="border" type="checkbox" checked> 外周を全部1にする</label>
 
@@ -115,13 +126,25 @@
     <button id="copy">出力をコピー</button>
   </div>
 
+  <div class="row">
+    <label>ステージ名 <input id="stageName" type="text" value="STAGE 1"></label>
+    <label>HP <input id="stageHp" type="number" min="0" value="18"></label>
+  </div>
+
+  <div class="hintBox">
+    ・クリック/ドラッグで配置（モードのタイルを置く）<br>
+    ・<span class="badge">P</span> と <span class="badge">G</span> は各1つだけ（置き直すと前のは消えます）<br>
+    ・出力は <code>{ name, hp, map: [...] }</code> 形式で、main.js の <code>STAGES</code> にそのまま貼れます
+  </div>
+
   <div class="twoCol">
     <div>
       <div id="grid" class="grid" aria-label="grid"></div>
       <p class="legend">
-        ・クリック/ドラッグで配置（モードのタイルを置く）<br>
-        ・<span class="badge">P</span> と <span class="badge">G</span> は各1つだけ（置き直すと前のは消えます）<br>
-        ・出力を main.js の <code>STAGES</code> にそのまま貼れます（0/1＋文字混在）
+        タイル：<span class="badge">1</span>=壁 / <span class="badge">0</span>=床 /
+        <span class="badge">P</span> 開始 / <span class="badge">G</span> ゴール /
+        <span class="badge">B</span> ブロック / <span class="badge">K</span> 鍵 /
+        <span class="badge">D</span> ドア / <span class="badge">^</span> スパイク
       </p>
     </div>
 
@@ -138,9 +161,11 @@
   const elH = document.getElementById("h");
   const elBorder = document.getElementById("border");
   const elMode = document.getElementById("mode");
+  const elStageName = document.getElementById("stageName");
+  const elStageHp = document.getElementById("stageHp");
 
-  let W = 25, H = 13;
-  let cells = []; // string: "0","1","P","G","B","K","D","^"
+  let W = 10, H = 10;
+  let cells = []; // "0","1","P","G","B","K","D","^"
 
   function idx(x,y){ return y*W + x; }
 
@@ -154,6 +179,10 @@
       cells[idx(0,y)] = "1";
       cells[idx(W-1,y)] = "1";
     }
+  }
+
+  function escapeJsString(s){
+    return s.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
   }
 
   function render(){
@@ -186,16 +215,25 @@
       lines.push(row);
     }
 
-    const pretty = lines.map(s => `"${s}"`).join(",\n    ");
+    const stageName = escapeJsString(elStageName.value || "STAGE");
+    const hp = parseInt(elStageHp.value, 10);
+    const hpSafe = Number.isFinite(hp) ? hp : 0;
+
+    const mapPretty = lines.map(s => `    "${s}"`).join(",\n");
+
     elOut.value =
-`[
-    ${pretty}
-]`;
+`{
+  name: "${stageName}",
+  hp: ${hpSafe},
+  map: [
+${mapPretty}
+  ],
+},`;
   }
 
   function build(){
-    W = Math.max(3, parseInt(elW.value, 10) || 25);
-    H = Math.max(3, parseInt(elH.value, 10) || 13);
+    W = Math.max(3, parseInt(elW.value, 10) || 10);
+    H = Math.max(3, parseInt(elH.value, 10) || 10);
     cells = Array(W*H).fill("0");
     applyBorder();
     render();
@@ -207,18 +245,15 @@
   }
 
   function paintCell(i, val){
-    // 外周固定がONなら、外周は常に1
     const x = i % W;
     const y = Math.floor(i / W);
     const isBorder = (x===0 || y===0 || x===W-1 || y===H-1);
 
     if (elBorder.checked && isBorder) {
-      // borderは壁固定（例外なし）
       cells[i] = "1";
       return;
     }
 
-    // P/Gは1つだけ
     if (val === "P") findAndClear("P");
     if (val === "G") findAndClear("G");
 
@@ -236,17 +271,13 @@
 
     paintCell(i, val);
 
-    // 表示更新（軽量）
     const c = cells[i];
     cellEl.classList.toggle("wall", c === "1");
     cellEl.textContent = (c === "0" || c === "1") ? "" : c;
 
-    // P/G 置き直し時は全再描画（前のP/Gの表示を消すため）
-    if (val === "P" || val === "G") {
-      render();
-    } else {
-      updateOutput();
-    }
+    // P/G置き直しは全描画（前のP/Gを消す）
+    if (val === "P" || val === "G") render();
+    else updateOutput();
 
     return true;
   }
@@ -273,7 +304,6 @@
   });
 
   document.getElementById("invert01").addEventListener("click", () => {
-    // 0/1だけ反転、タイル文字はそのまま
     cells = cells.map(v => (v === "0" ? "1" : (v === "1" ? "0" : v)));
     applyBorder();
     render();
@@ -290,6 +320,10 @@
       alert("コピーしました！（フォールバック）");
     }
   });
+
+  // name/hp変化で出力更新
+  elStageName.addEventListener("input", updateOutput);
+  elStageHp.addEventListener("input", updateOutput);
 
   build();
 })();
