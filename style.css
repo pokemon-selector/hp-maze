@@ -152,7 +152,10 @@ button, .btn, .board, .controls {
 }
 
 .btn{
-  touch-action: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .board{
@@ -160,4 +163,5 @@ button, .btn, .board, .controls {
   -webkit-user-select: none;
   user-select: none;
 }
+
 
