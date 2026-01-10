@@ -140,9 +140,13 @@ function render(){
 
 // ====== 操作 ======
 document.querySelectorAll("[data-move]").forEach(btn=>{
-  btn.addEventListener("click", () => tryMove(btn.dataset.move));
+  const handler = (e) => {
+    e.preventDefault(); // ズーム/スクロール系の挙動を抑える
+    tryMove(btn.dataset.move);
+  };
+  btn.addEventListener("pointerdown", handler, { passive: false });
+  btn.addEventListener("click", handler); // 保険（古い環境）
 });
-
 // キーボード（PCでも一応）
 window.addEventListener("keydown", (e)=>{
   const map = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right" };
@@ -178,3 +182,4 @@ document.getElementById("new").addEventListener("click", ()=>init(true));
 
 // 起動
 init(true);
+
