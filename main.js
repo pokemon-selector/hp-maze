@@ -139,25 +139,15 @@ function render(){
 }
 
 // ====== 操作 ======
-document.querySelectorAll("[data-move]").forEach(btn=>{
-  const handler = (e) => {
-    e.preventDefault(); // ズーム/スクロール系の挙動を抑える
-    tryMove(btn.dataset.move);
-  };
-  document.querySelectorAll("[data-move]").forEach(btn => {
-  btn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    tryMove(btn.dataset.move);
-  }, { passive: false });
-
-  // pointerdown の後に発火する click を無効化（2マス進むのを防ぐ）
+document.querySelectorAll("[data-move]").forEach(btn => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
+    tryMove(btn.dataset.move);
   });
 });
 
-});
+
 // キーボード（PCでも一応）
 window.addEventListener("keydown", (e)=>{
   const map = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right" };
@@ -171,6 +161,7 @@ document.getElementById("new").addEventListener("click", ()=>init(true));
 
 // 起動
 init(true);
+
 
 
 
