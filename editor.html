@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Stage Editor (0/1 + Tiles)</title>
+  <style>
+    :root { --cell: 22px; --gap: 2px; }
+    body{
+      margin:0; padding:12px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      background:#0f1115; color:#e8e8e8;
+    }
+    h1{ margin:0 0 10px; font-size:16px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+    label{ font-size:13px; opacity:.95; }
+    input[type="number"]{
+      width:80px; padding:8px; border-radius:10px; border:1px solid #2a3140;
+      background:#141824; color:#fff;
+    }
+    select{
+      padding:10px 10px; border-radius:12px; border:1px solid #2a3140;
+      background:#141824; color:#fff; font-weight:700;
+    }
+    button{
+      border:0; padding:10px 12px; border-radius:12px;
+      background:#232833; color:#fff; font-weight:700;
+    }
+    button:active{ transform: translateY(1px); }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(var(--w), var(--cell));
+      gap: var(--gap);
+      user-select:none;
+      touch-action: manipulation;
+      padding:10px;
+      border-radius:14px;
+      background:#121622;
+      width: fit-content;
+      max-width: 100%;
+      overflow:auto;
+    }
+    .cell{
+      width:var(--cell); height:var(--cell);
+      display:flex; align-items:center; justify-content:center;
+      border-radius:6px;
+      background:#2f3643;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:14px;
+      font-weight:800;
+      position:relative;
+    }
+    .wall{ background:#1b1f27; }
+    .twoCol{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    @media (min-width: 920px){
+      .twoCol{ grid-template-columns: auto 1fr; }
+    }
+    textarea{
+      width:min(720px, 100%);
+      height:260px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid #2a3140;
+      background:#0b0e15;
+      color:#e8e8e8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12.5px;
+      line-height:1.4;
+    }
+    .legend{ font-size:12px; opacity:.85; margin:0; line-height:1.5; }
+    .badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width: 22px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background:#232833;
+      border:1px solid #2a3140;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-weight:800;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ステージエディタ（0/1 + タイル配置）</h1>
+
+  <div class="row">
+    <label>幅(W) <input id="w" type="number" min="3" value="25"></label>
+    <label>高さ(H) <input id="h" type="number" min="3" value="13"></label>
+
+    <label><input id="border" type="checkbox" checked> 外周を全部1にする</label>
+
+    <label>
+      配置モード
+      <select id="mode">
+        <option value="1">壁 (1)</option>
+        <option value="0">床 (0)</option>
+        <option value="P">P (開始)</option>
+        <option value="G">G (ゴール)</option>
+        <option value="B">B (ブロック)</option>
+        <option value="K">K (鍵)</option>
+        <option value="D">D (ドア)</option>
+        <option value="^">^ (スパイク)</option>
+      </select>
+    </label>
+
+    <button id="build">グリッド生成</button>
+    <button id="clear">全消去</button>
+    <button id="invert01">0/1反転</button>
+    <button id="copy">出力をコピー</button>
+  </div>
+
+  <div class="twoCol">
+    <div>
+      <div id="grid" class="grid" aria-label="grid"></div>
+      <p class="legend">
+        ・クリック/ドラッグで配置（モードのタイルを置く）<br>
+        ・<span class="badge">P</span> と <span class="badge">G</span> は各1つだけ（置き直すと前のは消えます）<br>
+        ・出力を main.js の <code>STAGES</code> にそのまま貼れます（0/1＋文字混在）
+      </p>
+    </div>
+
+    <div>
+      <textarea id="out" readonly></textarea>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const elGrid = document.getElementById("grid");
+  const elOut = document.getElementById("out");
+  const elW = document.getElementById("w");
+  const elH = document.getElementById("h");
+  const elBorder = document.getElementById("border");
+  const elMode = document.getElementById("mode");
+
+  let W = 25, H = 13;
+  let cells = []; // string: "0","1","P","G","B","K","D","^"
+
+  function idx(x,y){ return y*W + x; }
+
+  function applyBorder(){
+    if (!elBorder.checked) return;
+    for (let x=0;x<W;x++){
+      cells[idx(x,0)] = "1";
+      cells[idx(x,H-1)] = "1";
+    }
+    for (let y=0;y<H;y++){
+      cells[idx(0,y)] = "1";
+      cells[idx(W-1,y)] = "1";
+    }
+  }
+
+  function render(){
+    elGrid.style.setProperty("--w", W);
+    elGrid.innerHTML = "";
+
+    for (let y=0;y<H;y++){
+      for (let x=0;x<W;x++){
+        const i = idx(x,y);
+        const c = cells[i];
+
+        const box = document.createElement("div");
+        box.className = "cell" + (c === "1" ? " wall" : "");
+        box.dataset.i = String(i);
+        box.textContent = (c === "0" || c === "1") ? "" : c;
+
+        elGrid.appendChild(box);
+      }
+    }
+    updateOutput();
+  }
+
+  function updateOutput(){
+    const lines = [];
+    for (let y=0;y<H;y++){
+      let row = "";
+      for (let x=0;x<W;x++){
+        row += cells[idx(x,y)];
+      }
+      lines.push(row);
+    }
+
+    const pretty = lines.map(s => `"${s}"`).join(",\n    ");
+    elOut.value =
+`[
+    ${pretty}
+]`;
+  }
+
+  function build(){
+    W = Math.max(3, parseInt(elW.value, 10) || 25);
+    H = Math.max(3, parseInt(elH.value, 10) || 13);
+    cells = Array(W*H).fill("0");
+    applyBorder();
+    render();
+  }
+
+  function findAndClear(char){
+    const k = cells.indexOf(char);
+    if (k >= 0) cells[k] = "0";
+  }
+
+  function paintCell(i, val){
+    // 外周固定がONなら、外周は常に1
+    const x = i % W;
+    const y = Math.floor(i / W);
+    const isBorder = (x===0 || y===0 || x===W-1 || y===H-1);
+
+    if (elBorder.checked && isBorder) {
+      // borderは壁固定（例外なし）
+      cells[i] = "1";
+      return;
+    }
+
+    // P/Gは1つだけ
+    if (val === "P") findAndClear("P");
+    if (val === "G") findAndClear("G");
+
+    cells[i] = val;
+  }
+
+  // ドラッグ塗り
+  let dragging = false;
+
+  function handlePaint(target){
+    const cellEl = target.closest(".cell");
+    if (!cellEl) return false;
+    const i = parseInt(cellEl.dataset.i, 10);
+    const val = elMode.value;
+
+    paintCell(i, val);
+
+    // 表示更新（軽量）
+    const c = cells[i];
+    cellEl.classList.toggle("wall", c === "1");
+    cellEl.textContent = (c === "0" || c === "1") ? "" : c;
+
+    // P/G 置き直し時は全再描画（前のP/Gの表示を消すため）
+    if (val === "P" || val === "G") {
+      render();
+    } else {
+      updateOutput();
+    }
+
+    return true;
+  }
+
+  elGrid.addEventListener("pointerdown", (e) => {
+    if (!handlePaint(e.target)) return;
+    dragging = true;
+    e.preventDefault();
+  });
+
+  elGrid.addEventListener("pointerover", (e) => {
+    if (!dragging) return;
+    handlePaint(e.target);
+  });
+
+  window.addEventListener("pointerup", () => { dragging = false; });
+
+  document.getElementById("build").addEventListener("click", build);
+
+  document.getElementById("clear").addEventListener("click", () => {
+    cells.fill("0");
+    applyBorder();
+    render();
+  });
+
+  document.getElementById("invert01").addEventListener("click", () => {
+    // 0/1だけ反転、タイル文字はそのまま
+    cells = cells.map(v => (v === "0" ? "1" : (v === "1" ? "0" : v)));
+    applyBorder();
+    render();
+  });
+
+  document.getElementById("copy").addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(elOut.value);
+      alert("コピーしました！");
+    }catch{
+      elOut.focus();
+      elOut.select();
+      document.execCommand("copy");
+      alert("コピーしました！（フォールバック）");
+    }
+  });
+
+  build();
+})();
+</script>
+</body>
+</html>
