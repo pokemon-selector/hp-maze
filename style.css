@@ -125,3 +125,17 @@ button:active{ transform: translateY(1px); }
   flex: 1;
   padding: 10px 10px;
 }
+
+/* 連打でズームしない＆選択されない */
+html, body {
+  touch-action: manipulation;
+}
+
+button, .btn, .board, .controls {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
