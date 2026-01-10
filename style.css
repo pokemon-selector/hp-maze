@@ -1,5 +1,5 @@
 :root{
-  --cell: 28px;
+  --cell: clamp(18px, 5vw, 28px);
   --gap: 2px;
 }
 
@@ -160,3 +160,4 @@ button, .btn, .board, .controls {
   -webkit-user-select: none;
   user-select: none;
 }
+
