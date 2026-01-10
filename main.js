@@ -31,6 +31,22 @@ const STAGES = [
 ]
   },
   // ここに editor の出力をどんどん追加
+  {
+  name: "STAGE2",
+  hp: 18,
+  map: [
+    "1111111111",
+    "1011111011",
+    "1011111011",
+    "1011111011",
+    "1011111011",
+    "100B000001",
+    "1111111111",
+    "1111111111",
+    "1111111111",
+    "1111111111"
+  ],
+},
 ];
 
 // ====== 状態 ======
@@ -46,6 +62,55 @@ let steps = 0;
 let status = "探索中";
 let hasKey = false;
 
+// Undo用：履歴
+const history = []; // 配列の末尾が最新
+const HISTORY_LIMIT = 200;
+
+function snapshot(){
+  return {
+    grid: grid.map(row => row.join("")),
+    player: { ...player },
+    goal: { ...goal },
+    w, h,
+    hp, steps,
+    hasKey,
+    status,
+  };
+}
+
+function restore(s){
+  w = s.w; h = s.h;
+  grid = s.grid.map(line => line.split(""));
+  player = { ...s.player };
+  goal = { ...s.goal };
+  hp = s.hp;
+  steps = s.steps;
+  hasKey = s.hasKey;
+  status = s.status;
+
+  // Undoしたら探索中に戻したい場合はここで上書きしてもOK
+  // status = "探索中: " + STAGES[stageIndex].name;
+}
+
+function pushHistory(){
+  history.push(snapshot());
+  if (history.length > HISTORY_LIMIT) history.shift();
+}
+
+function undo(){
+  if (history.length === 0) return;
+  const prev = history.pop();
+  restore(prev);
+
+  // クリア/失敗画面が出ていたら閉じる
+  hideOverlay();
+  render();
+}
+// ====== ボタン ======
+const btnUndo = document.getElementById("undo");
+if (btnUndo) btnUndo.addEventListener("click", () => undo());
+
+
 // ====== DOM ======
 const elBoard = document.getElementById("board");
 const elHp = document.getElementById("hp");
@@ -53,6 +118,47 @@ const elSteps = document.getElementById("steps");
 const elStatus = document.getElementById("status");
 const btnNext = document.getElementById("new");
 const btnRestart = document.getElementById("restart");
+
+// ====== Overlay（クリア/失敗演出） ======
+const overlay = document.createElement("div");
+overlay.className = "overlay";
+overlay.innerHTML = `
+  <div class="overlayCard" role="dialog" aria-modal="true">
+    <h2 class="overlayTitle" id="ovTitle">CLEAR</h2>
+    <p class="overlayText" id="ovText">次のステージへ進めます。</p>
+    <div class="overlayBtns">
+      <button class="ghost" id="ovRetry">やり直す</button>
+      <button id="ovNext">次へ</button>
+    </div>
+  </div>
+`;
+document.body.appendChild(overlay);
+
+const ovTitle = overlay.querySelector("#ovTitle");
+const ovText  = overlay.querySelector("#ovText");
+const ovRetry = overlay.querySelector("#ovRetry");
+const ovNext  = overlay.querySelector("#ovNext");
+
+ovRetry.addEventListener("click", () => loadStage(stageIndex));
+ovNext.addEventListener("click", () => loadStage(stageIndex + 1));
+
+function showOverlay(kind){
+  if (kind === "clear") {
+    ovTitle.textContent = "CLEAR!";
+    ovText.textContent = "次へで次のステージに進めます。";
+    ovNext.disabled = false;
+  } else if (kind === "dead") {
+    ovTitle.textContent = "FAILED";
+    ovText.textContent = "HPが0になりました。やり直そう。";
+    ovNext.disabled = true; // 失敗時は次へ無効（好みで変えてOK）
+  }
+  overlay.classList.add("show");
+}
+
+function hideOverlay(){
+  overlay.classList.remove("show");
+}
+
 
 // ====== ユーティリティ ======
 function setStatus(text){
@@ -103,6 +209,8 @@ function parseStage(stage){
 function loadStage(i){
   stageIndex = (i + STAGES.length) % STAGES.length;
   const stage = STAGES[stageIndex];
+  
+  history.length = 0;
 
   parseStage(stage);
 
@@ -184,6 +292,7 @@ function tryMove(dir){
 
     // 押し先が床のみOK
     if (bt === CELL.FLOOR) {
+      pushHistory();
       setTile(bx, by, CELL.BLOCK);
       setTile(nx, ny, CELL.FLOOR);
 
@@ -202,6 +311,8 @@ function tryMove(dir){
 
   // 通常移動
   if (!canEnter(nx, ny)) return;
+  
+  pushHistory();
 
   player.x = nx; player.y = ny;
 
@@ -260,6 +371,15 @@ function render(){
       elBoard.appendChild(cell);
     }
   }
+
+  // ★★★ ここに貼る ★★★
+  if (status.startsWith("クリア")) {
+    showOverlay("clear");
+  } else if (status.startsWith("力尽きた")) {
+    showOverlay("dead");
+  } else {
+    hideOverlay();
+  }  
 }
 
 // ====== 入力 ======
@@ -290,6 +410,13 @@ window.addEventListener("keydown", (e)=>{
     loadStage(stageIndex + 1);
     return;
   }
+
+  if (e.key === "z" || e.key === "Z" || e.key === "Backspace") {
+    e.preventDefault();
+    undo();
+    return;
+  }
+
 });
 
 // 既存ボタン
@@ -298,6 +425,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
