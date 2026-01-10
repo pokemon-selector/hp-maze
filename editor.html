@@ -311,16 +311,33 @@ ${mapPretty}
 
   elGrid.addEventListener("pointerdown", (e) => {
     if (!handlePaint(e.target)) return;
+  
     dragging = true;
+  
+    // ★重要：ポインタを捕まえる（指が外に出ても pointerup が取れる）
+    try { elGrid.setPointerCapture(e.pointerId); } catch {}
+  
     e.preventDefault();
   });
-
-  elGrid.addEventListener("pointerover", (e) => {
+  
+  elGrid.addEventListener("pointermove", (e) => {
     if (!dragging) return;
     handlePaint(e.target);
   });
+  
+  // 解除系を増やす（ここが肝）
+  function stopDrag(e){
+    dragging = false;
+    if (e && e.pointerId != null) {
+      try { elGrid.releasePointerCapture(e.pointerId); } catch {}
+    }
+  }
+  
+  elGrid.addEventListener("pointerup", stopDrag);
+  elGrid.addEventListener("pointercancel", stopDrag);
+  elGrid.addEventListener("pointerleave", stopDrag);
+  window.addEventListener("blur", () => { dragging = false; });
 
-  window.addEventListener("pointerup", () => { dragging = false; });
 
   document.getElementById("build").addEventListener("click", build);
 
