@@ -1,0 +1,96 @@
+:root{
+  --cell: 28px;
+  --gap: 2px;
+}
+
+*{ box-sizing: border-box; }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+  background:#0f1115;
+  color:#e8e8e8;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 12px 8px;
+  gap:12px;
+}
+.stat{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  font-size:14px;
+}
+.buttons{ display:flex; gap:8px; }
+button{
+  border:0;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#232833;
+  color:#fff;
+  font-weight:600;
+}
+button:active{ transform: translateY(1px); }
+
+.main{
+  display:grid;
+  justify-items:center;
+  gap:14px;
+  padding:10px 12px 18px;
+}
+
+.board{
+  display:grid;
+  grid-template-columns: repeat(var(--w), var(--cell));
+  grid-template-rows: repeat(var(--h), var(--cell));
+  gap: var(--gap);
+  touch-action: manipulation;
+  user-select:none;
+}
+
+.cell{
+  width:var(--cell);
+  height:var(--cell);
+  border-radius:7px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  font-weight:800;
+}
+.wall{ background:#1b1f27; }
+.floor{ background:#2f3643; }
+.player{ background:#4b7bec; }
+.goal{ background:#26de81; color:#062012; }
+.dead{ background:#eb3b5a; }
+
+.controls{
+  width:min(420px, 100%);
+  display:grid;
+  gap:10px;
+}
+.pad{
+  display:grid;
+  justify-items:center;
+  gap:8px;
+}
+.row{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+}
+.btn{
+  width:72px;
+  height:52px;
+  font-size:20px;
+  border-radius:14px;
+}
+.hint{
+  margin:0;
+  opacity:.85;
+  font-size:13px;
+  line-height:1.5;
+}

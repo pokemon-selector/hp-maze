@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>HP迷路</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="stat">
+      <div>HP: <span id="hp">20</span></div>
+      <div>歩数: <span id="steps">0</span></div>
+      <div>状態: <span id="status">探索中</span></div>
+    </div>
+    <div class="buttons">
+      <button id="restart">リスタート</button>
+      <button id="new">別マップ</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div id="board" class="board" aria-label="maze board"></div>
+
+    <div class="controls" aria-label="controls">
+      <div class="pad">
+        <button class="btn" data-move="up">↑</button>
+        <div class="row">
+          <button class="btn" data-move="left">←</button>
+          <button class="btn" data-move="down">↓</button>
+          <button class="btn" data-move="right">→</button>
+        </div>
+      </div>
+      <p class="hint">壁は通れません。1歩でHPが1減ります。ゴール(G)に到達したら勝ち。</p>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
