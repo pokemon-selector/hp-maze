@@ -164,6 +164,8 @@
   const elMode = document.getElementById("mode");
   const elStageName = document.getElementById("stageName");
   const elStageHp = document.getElementById("stageHp");
+  const elWarn = document.getElementById("warn");
+
 
   let W = 10, H = 10;
   let cells = []; // "0","1","P","G","B","K","D","^"
@@ -206,6 +208,26 @@
     updateOutput();
   }
 
+  function validateStage(){
+    const hasP = cells.includes("P");
+    const hasG = cells.includes("G");
+  
+    const msgs = [];
+    if (!hasP) msgs.push("P（開始）がありません");
+    if (!hasG) msgs.push("G（ゴール）がありません");
+  
+    if (msgs.length){
+      elWarn.style.display = "block";
+      elWarn.innerHTML = `<strong>警告:</strong> ${msgs.join(" / ")}<br>（このまま main.js に貼ると次へでエラーになります）`;
+      return false;
+    } else {
+      elWarn.style.display = "none";
+      elWarn.textContent = "";
+      return true;
+    }
+  }
+
+  
   function updateOutput(){
     const lines = [];
     for (let y=0;y<H;y++){
@@ -230,6 +252,10 @@
 ${mapPretty}
   ],
 },`;
+ 
+  validateStage();
+
+  
   }
 
   function build(){
