@@ -236,3 +236,25 @@ button, .btn, .board, .controls {
   line-height:1.5;
 }
 .warnBox strong{ color:#fff; }
+
+.legend{
+  margin-top:8px;
+  font-size:12px;
+  opacity:.9;
+  line-height:1.6;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:22px;
+  padding:2px 8px;
+  margin-right:4px;
+  border-radius:999px;
+  background:#232833;
+  border:1px solid #2a3140;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight:800;
+  font-size:12px;
+}
