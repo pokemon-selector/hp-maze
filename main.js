@@ -154,32 +154,11 @@ window.addEventListener("keydown", (e)=>{
   if (dir) { e.preventDefault(); tryMove(dir); }
 });
 
-// スワイプ（スマホ）
-let touchStart = null;
-window.addEventListener("touchstart", (e)=>{
-  if (!e.touches?.length) return;
-  const t = e.touches[0];
-  touchStart = { x: t.clientX, y: t.clientY };
-}, { passive: true });
-
-window.addEventListener("touchend", (e)=>{
-  if (!touchStart) return;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStart.x;
-  const dy = t.clientY - touchStart.y;
-  touchStart = null;
-
-  const absX = Math.abs(dx), absY = Math.abs(dy);
-  if (Math.max(absX, absY) < 24) return; // ちょいスワイプ無視
-
-  if (absX > absY) tryMove(dx > 0 ? "right" : "left");
-  else tryMove(dy > 0 ? "down" : "up");
-}, { passive: true });
-
 // ボタン
 document.getElementById("restart").addEventListener("click", ()=>init(false));
 document.getElementById("new").addEventListener("click", ()=>init(true));
 
 // 起動
 init(true);
+
 
