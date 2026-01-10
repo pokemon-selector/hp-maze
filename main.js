@@ -1,5 +1,5 @@
 // ====== 設定 ======
-const SIZE = { w: 13, h: 17 };
+const SIZE = { w: 19, h: 11 };
 const START_HP = 20;
 
 // 0=床, 1=壁
@@ -160,5 +160,6 @@ document.getElementById("new").addEventListener("click", ()=>init(true));
 
 // 起動
 init(true);
+
 
 
