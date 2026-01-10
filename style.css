@@ -154,3 +154,9 @@ button, .btn, .board, .controls {
 .btn{
   touch-action: none;
 }
+
+.board{
+  touch-action: none;          /* 盤面でのスワイプ/ズームを無効化 */
+  -webkit-user-select: none;
+  user-select: none;
+}
