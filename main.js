@@ -1,58 +1,46 @@
-if (window.__HP_MAZE_LOADED__) {
-  console.warn("main.js loaded twice");
-} else {
-  window.__HP_MAZE_LOADED__ = true;
-
 // ====== 設定 ======
-const SIZE = { w: 17, h: 13 };
-const START_HP = 20;
+const START_HP = 18; // 手数＝体力
+const SPIKE_EXTRA_COST = 1; // スパイクは追加で-1（合計-2になる）
+const CELL = {
+  WALL: "#",
+  FLOOR: ".",
+  PLAYER: "P",
+  GOAL: "G",
+  BLOCK: "B",
+  KEY: "K",
+  DOOR: "D",
+  SPIKE: "^",
+};
 
-// 0=床, 1=壁
-function generateMaze(w, h) {
-  // まず全部壁
-  const g = Array.from({ length: h }, () => Array(w).fill(1));
-
-  // 迷路生成（簡易：穴掘り法の雰囲気）
-  // 奇数座標を通路にして、2マスずつ掘る
-  function inBounds(x, y) { return x > 0 && y > 0 && x < w - 1 && y < h - 1; }
-  function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-
-  const sx = 1, sy = 1;
-  g[sy][sx] = 0;
-
-  const stack = [{ x: sx, y: sy }];
-  const dirs = [
-    { dx: 0, dy: -2 }, { dx: 2, dy: 0 }, { dx: 0, dy: 2 }, { dx: -2, dy: 0 }
-  ];
-
-  while (stack.length) {
-    const cur = stack[stack.length - 1];
-    const candidates = shuffle(dirs.slice()).filter(d => {
-      const nx = cur.x + d.dx, ny = cur.y + d.dy;
-      return inBounds(nx, ny) && g[ny][nx] === 1;
-    });
-
-    if (!candidates.length) { stack.pop(); continue; }
-    const d = candidates[0];
-    const nx = cur.x + d.dx, ny = cur.y + d.dy;
-    // 間の壁を壊す
-    g[cur.y + d.dy/2][cur.x + d.dx/2] = 0;
-    g[ny][nx] = 0;
-    stack.push({ x: nx, y: ny });
-  }
-
-  // ちょっとだけランダムに穴を増やして遊びやすく
-  for (let i=0;i<Math.floor((w*h)*0.04);i++){
-    const x = 1 + Math.floor(Math.random()*(w-2));
-    const y = 1 + Math.floor(Math.random()*(h-2));
-    g[y][x] = 0;
-  }
-
-  return g;
-}
+// ====== ステージデータ ======
+const STAGES = [
+  [
+    "#################",
+    "#P....#....B...G#",
+    "#.##..#..####...#",
+    "#..#..#.....#...#",
+    "#..#..###.^.#.###",
+    "#..#......#.#...#",
+    "#..#####..#.#.D.#",
+    "#......#..#.#...#",
+    "#.####.#..#.#.###",
+    "#....#.#..#.#...#",
+    "###..#.#..#.#.###",
+    "#....#....#...K.#",
+    "#################",
+  ],
+];
 
 // ====== 状態 ======
-let maze, player, goal, hp, steps, status;
+let stageIndex = 0;
+let grid = [];               // 文字の2次元配列
+let w = 0, h = 0;
+let player = { x: 1, y: 1 };
+let goal = { x: 1, y: 1 };
+let hp = START_HP;
+let steps = 0;
+let status = "探索中";
+let hasKey = false;
 
 const elBoard = document.getElementById("board");
 const elHp = document.getElementById("hp");
@@ -61,34 +49,60 @@ const elStatus = document.getElementById("status");
 
 function setStatus(text){ status = text; elStatus.textContent = text; }
 
-function init(newMap=false){
-  if (!maze || newMap) maze = generateMaze(SIZE.w, SIZE.h);
+function parseStage(lines){
+  h = lines.length;
+  w = lines[0].length;
 
-  player = { x: 1, y: 1 };
-  goal = { x: SIZE.w - 2, y: SIZE.h - 2 };
+  grid = lines.map(row => row.split(""));
 
-  // ゴールが壁なら床に
-  maze[goal.y][goal.x] = 0;
-  maze[player.y][player.x] = 0;
+  hasKey = false;
+
+  for (let y=0; y<h; y++){
+    for (let x=0; x<w; x++){
+      const c = grid[y][x];
+      if (c === CELL.PLAYER){
+        player = { x, y };
+        grid[y][x] = CELL.FLOOR;
+      }
+      if (c === CELL.GOAL){
+        goal = { x, y };
+        // Gは床として扱って描画で表示する
+        grid[y][x] = CELL.FLOOR;
+      }
+    }
+  }
+}
+
+function loadStage(i){
+  stageIndex = i;
+  parseStage(STAGES[stageIndex]);
 
   hp = START_HP;
   steps = 0;
-  setStatus("探索中");
+  setStatus(`探索中 (STAGE ${stageIndex+1})`);
   render();
 }
 
-function canMove(x,y){
-  return maze[y] && maze[y][x] === 0;
+function inBounds(x,y){ return y>=0 && y<h && x>=0 && x<w; }
+function tileAt(x,y){ return inBounds(x,y) ? grid[y][x] : CELL.WALL; }
+function setTile(x,y,v){ if (inBounds(x,y)) grid[y][x] = v; }
+
+function canEnter(x,y){
+  const t = tileAt(x,y);
+  if (t === CELL.WALL) return false;
+  if (t === CELL.DOOR && !hasKey) return false;
+  return true;
 }
 
-let lastMoveAt = 0;
-  
+function consumeStep(extra=0){
+  steps += 1;
+  hp -= (1 + extra);
+  if (hp < 0) hp = 0;
+}
+
 function tryMove(dir){
-  const now = performance.now();
-  if (now - lastMoveAt < 80) return; // 80ms以内の連続入力は無視
-  lastMoveAt = now;
-  
-  if (status !== "探索中") return;
+  if (!status.startsWith("探索中")) return;
+  if (hp <= 0) { setStatus("力尽きた…"); render(); return; }
 
   const delta = {
     up:    {dx:0, dy:-1},
@@ -101,44 +115,124 @@ function tryMove(dir){
   const nx = player.x + delta.dx;
   const ny = player.y + delta.dy;
 
-  if (!canMove(nx, ny)) return; // 壁
+  const t = tileAt(nx, ny);
 
-  player.x = nx; player.y = ny;
-  steps += 1;
-  hp -= 1;
+  // 壁
+  if (t === CELL.WALL) return;
 
-  if (player.x === goal.x && player.y === goal.y) {
-    setStatus("クリア！");
-  } else if (hp <= 0) {
-    hp = 0;
-    setStatus("力尽きた…");
+  // ドア（鍵なし）
+  if (t === CELL.DOOR && !hasKey) return;
+
+  // ブロック：押せるなら押して進む
+  if (t === CELL.BLOCK) {
+    const bx = nx + delta.dx;
+    const by = ny + delta.dy;
+    const bt = tileAt(bx, by);
+
+    // 押し先が床（or ゴール位置）で、壁/ドア/ブロックじゃなければOK
+    if (bt === CELL.FLOOR) {
+      setTile(bx, by, CELL.BLOCK);
+      setTile(nx, ny, CELL.FLOOR);
+
+      // 移動（1手消費）
+      player.x = nx; player.y = ny;
+
+      // スパイク判定（押し移動の着地点がスパイクの場合）
+      const landed = tileAt(player.x, player.y);
+      const extra = (landed === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
+      consumeStep(extra);
+
+      // アイテム取得
+      onEnterTile(player.x, player.y);
+
+      // クリア判定
+      checkGoalOrDead();
+      render();
+      return;
+    }
+    // 押せないなら動けない
+    return;
   }
 
+  // 通常移動できるタイルか？
+  if (!canEnter(nx, ny)) return;
+
+  // 移動
+  player.x = nx; player.y = ny;
+
+  // スパイク追加コスト
+  const extra = (t === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
+  consumeStep(extra);
+
+  // タイル効果
+  onEnterTile(nx, ny);
+
+  // クリア/死亡
+  checkGoalOrDead();
   render();
+}
+
+function onEnterTile(x,y){
+  const t = tileAt(x,y);
+
+  if (t === CELL.KEY) {
+    hasKey = true;
+    setTile(x,y, CELL.FLOOR);
+  }
+  if (t === CELL.DOOR && hasKey) {
+    // ドアは開けたら床にしてもOK（ヘルテイカーっぽく）
+    setTile(x,y, CELL.FLOOR);
+  }
+}
+
+function checkGoalOrDead(){
+  if (player.x === goal.x && player.y === goal.y) {
+    setStatus(`クリア！ (STAGE ${stageIndex+1})`);
+    return;
+  }
+  if (hp <= 0) {
+    setStatus("力尽きた…");
+  }
 }
 
 function render(){
   elHp.textContent = String(hp);
   elSteps.textContent = String(steps);
+  elStatus.textContent = hasKey ? `${status} 🔑` : status;
 
-  elBoard.style.setProperty("--w", SIZE.w);
-  elBoard.style.setProperty("--h", SIZE.h);
+  elBoard.style.setProperty("--w", w);
+  elBoard.style.setProperty("--h", h);
 
-  // DOMを作り直す（最小実装）
   elBoard.innerHTML = "";
-  for (let y=0;y<SIZE.h;y++){
-    for (let x=0;x<SIZE.w;x++){
+  for (let y=0; y<h; y++){
+    for (let x=0; x<w; x++){
       const cell = document.createElement("div");
-      cell.className = "cell " + (maze[y][x] === 1 ? "wall" : "floor");
+      const base = tileAt(x,y);
 
+      cell.className = "cell " + (base === CELL.WALL ? "wall" : "floor");
+      cell.textContent = "";
+
+      // タイルの表示
       if (x === goal.x && y === goal.y) {
         cell.className = "cell goal";
         cell.textContent = "G";
+      } else if (base === CELL.BLOCK) {
+        cell.textContent = "■";
+      } else if (base === CELL.KEY) {
+        cell.textContent = "K";
+      } else if (base === CELL.DOOR) {
+        cell.textContent = "D";
+      } else if (base === CELL.SPIKE) {
+        cell.textContent = "^";
       }
+
+      // プレイヤーは最前面
       if (x === player.x && y === player.y) {
         cell.className = "cell player";
         cell.textContent = "P";
       }
+
+      // 死亡表示
       if (status === "力尽きた…" && x === player.x && y === player.y){
         cell.className = "cell dead";
         cell.textContent = "X";
@@ -149,7 +243,7 @@ function render(){
   }
 }
 
-// ====== 操作 ======
+// ====== 操作（clickのみ） ======
 document.querySelectorAll("[data-move]").forEach(btn => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -158,24 +252,19 @@ document.querySelectorAll("[data-move]").forEach(btn => {
   });
 });
 
-
-// キーボード（PCでも一応）
 window.addEventListener("keydown", (e)=>{
   const map = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right" };
   const dir = map[e.key];
   if (dir) { e.preventDefault(); tryMove(dir); }
 });
 
-// ボタン
-document.getElementById("restart").addEventListener("click", ()=>init(false));
-document.getElementById("new").addEventListener("click", ()=>init(true));
+document.getElementById("restart").addEventListener("click", ()=>loadStage(stageIndex));
+document.getElementById("new").addEventListener("click", ()=>{
+  const next = (stageIndex + 1) % STAGES.length;
+  loadStage(next);
+});
 
 // 起動
-init(true);
-
-}
-
-
-
+loadStage(0);
 
 
