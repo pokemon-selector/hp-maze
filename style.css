@@ -147,4 +147,10 @@ button, .btn, .board, .controls {
   -webkit-tap-highlight-color: transparent;
 }
 
+.main{
+  padding-bottom: 140px; /* 操作パッド分の余白 */
+}
 
+.btn{
+  touch-action: none;
+}
