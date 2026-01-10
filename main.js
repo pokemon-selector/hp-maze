@@ -144,8 +144,19 @@ document.querySelectorAll("[data-move]").forEach(btn=>{
     e.preventDefault(); // ズーム/スクロール系の挙動を抑える
     tryMove(btn.dataset.move);
   };
-  btn.addEventListener("pointerdown", handler, { passive: false });
-  btn.addEventListener("click", handler); // 保険（古い環境）
+  document.querySelectorAll("[data-move]").forEach(btn => {
+  btn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    tryMove(btn.dataset.move);
+  }, { passive: false });
+
+  // pointerdown の後に発火する click を無効化（2マス進むのを防ぐ）
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+});
+
 });
 // キーボード（PCでも一応）
 window.addEventListener("keydown", (e)=>{
@@ -160,6 +171,7 @@ document.getElementById("new").addEventListener("click", ()=>init(true));
 
 // 起動
 init(true);
+
 
 
 
