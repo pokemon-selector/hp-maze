@@ -35,6 +35,10 @@ button{
 }
 button:active{ transform: translateY(1px); }
 
+button.primary{
+  background:#2b6cb0; /* 見た目を変えたいならここ */
+}
+
 .main{
   display:grid;
   justify-items:center;
@@ -163,5 +167,6 @@ button, .btn, .board, .controls {
   -webkit-user-select: none;
   user-select: none;
 }
+
 
 
