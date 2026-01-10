@@ -7,17 +7,16 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="top">
-    <div class="stat">
-      <div>HP: <span id="hp">20</span></div>
-      <div>歩数: <span id="steps">0</span></div>
-      <div>状態: <span id="status">探索中</span></div>
+    <div class="hud">
+        <div>HP: <span id="hp">20</span></div>
+        <div>歩数: <span id="steps">0</span></div>
+        <div>状態: <span id="status">探索中</span></div>
+        <div class="hudBtns">
+            <button id="restart">リスタート</button>
+            <button id="new">別マップ</button>
+        </div>
     </div>
-    <div class="buttons">
-      <button id="restart">リスタート</button>
-      <button id="new">別マップ</button>
-    </div>
-  </header>
+
 
   <main class="main">
     <div id="board" class="board" aria-label="maze board"></div>
