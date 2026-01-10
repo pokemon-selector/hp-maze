@@ -295,6 +295,8 @@ ${mapPretty}
     if (!cellEl) return false;
     const i = parseInt(cellEl.dataset.i, 10);
     const val = elMode.value;
+    const isPaintableDrag = (val === "0" || val === "1");
+
 
     paintCell(i, val);
 
@@ -309,21 +311,33 @@ ${mapPretty}
     return true;
   }
 
-  elGrid.addEventListener("pointerdown", (e) => {
+    elGrid.addEventListener("pointerdown", (e) => {
     if (!handlePaint(e.target)) return;
   
-    dragging = true;
+    const val = elMode.value;
   
-    // ★重要：ポインタを捕まえる（指が外に出ても pointerup が取れる）
-    try { elGrid.setPointerCapture(e.pointerId); } catch {}
+    // ★壁/床(1/0)の時だけドラッグ開始
+    if (val === "0" || val === "1") {
+      dragging = true;
+  
+      // 指が外に出ても pointerup が取れる
+      try { elGrid.setPointerCapture(e.pointerId); } catch {}
+    } else {
+      dragging = false; // タイル系はクリック1回だけ
+    }
   
     e.preventDefault();
   });
-  
+
+
   elGrid.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    handlePaint(e.target);
-  });
+  if (!dragging) return;
+  // ★壁/床(1/0)の時だけドラッグ塗り
+  const val = elMode.value;
+  if (val !== "0" && val !== "1") return;
+  handlePaint(e.target);
+});
+
   
   // 解除系を増やす（ここが肝）
   function stopDrag(e){
