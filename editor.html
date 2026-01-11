@@ -342,12 +342,16 @@ ${mapPretty}
   elGrid.addEventListener("pointermove", (e) => {
     if (!dragging) return;
   
-    // ★0/1の時だけドラッグ塗り
     const val = elMode.value;
     if (val !== "0" && val !== "1") return;
   
-    handlePaint(e.target);
+    // ★setPointerCapture中は e.target が grid になりやすいので、座標から拾う
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    if (!hit) return;
+  
+    handlePaint(hit);
   });
+
   
   elGrid.addEventListener("pointerup", stopDrag);
   elGrid.addEventListener("pointercancel", stopDrag);
