@@ -602,18 +602,29 @@ function onEnterTile(x,y){
 
 
 function checkGoalOrDead(){
+  // クリア判定
   if (player.x === goal.x && player.y === goal.y) {
+    const isLast = (stageIndex === STAGES.length - 1);
+
     setStatus(`クリア！: ${STAGES[stageIndex].name}`);
     btnNext.disabled = false;
     btnNext.classList.add("primary");
-    btnNext.textContent = (stageIndex === STAGES.length - 1) ? "最初から" : "次へ";
+    btnNext.textContent = isLast ? "最初から" : "次へ";
+
+    // ★SE
+    playSE(isLast ? "allclear" : "clear");
     return;
   }
 
+  // 死亡判定
   if (hp <= 0) {
     setStatus(`力尽きた…: ${STAGES[stageIndex].name}`);
     btnNext.disabled = true;
     btnNext.classList.remove("primary");
+    btnNext.textContent = "次へ"; // 見た目の保険（任意）
+
+    // ★SE
+    playSE("dead");
   }
 }
 
@@ -822,6 +833,7 @@ if (btnSound) {
 
 // 起動
 loadStage(0);
+
 
 
 
