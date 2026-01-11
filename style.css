@@ -258,3 +258,42 @@ button, .btn, .board, .controls {
   font-weight:800;
   font-size:12px;
 }
+
+/* ===== ALL CLEAR FX ===== */
+.overlay.show .overlayCard{
+  animation: pop 240ms ease-out;
+}
+@keyframes pop{
+  from{ transform: translateY(8px) scale(.98); opacity:.6; }
+  to{ transform: translateY(0) scale(1); opacity:1; }
+}
+
+.allclearTitle{
+  animation: glow 1.2s ease-in-out infinite;
+}
+@keyframes glow{
+  0%,100%{ filter: drop-shadow(0 0 0px rgba(255,255,255,.0)); transform: scale(1); }
+  50%{ filter: drop-shadow(0 0 10px rgba(255,255,255,.35)); transform: scale(1.02); }
+}
+
+.confetti{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.confetti i{
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: .9;
+  animation: fall linear forwards;
+}
+@keyframes fall{
+  to{
+    transform: translateY(110vh) rotate(540deg);
+    opacity: .95;
+  }
+}
