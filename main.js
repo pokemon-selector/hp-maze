@@ -139,6 +139,23 @@ const STAGES = [
     "1111111"
   ],
 },
+
+{
+  name: "STAGE 8",
+  hp: 15,
+  map: [
+    "1111111111",
+    "1P1111G111",
+    "1011110111",
+    "1011110111",
+    "10B0O00111",
+    "1111111111",
+    "1111111111",
+    "1111111111",
+    "1111111111",
+    "1111111111"
+  ],
+},
   
 ];
 
@@ -172,7 +189,7 @@ let goal = { x: 1, y: 1 };
 let hp = 0;
 let steps = 0;
 let status = "探索中";
-let hasKey = false;
+let hasKey = 0;
 let warps = []; // [{x,y}, {x,y}] を想定
 let skipWarpOnce = false; // ワープ後に連鎖しないため
 
@@ -188,7 +205,7 @@ function snapshot(){
     goal: { ...goal },
     w, h,
     hp, steps,
-    hasKey,
+    key,
     status,
   };
 }
@@ -200,7 +217,7 @@ function restore(s){
   goal = { ...s.goal };
   hp = s.hp;
   steps = s.steps;
-  hasKey = s.hasKey;
+  keys = s.keys;
   status = s.status;
 
   // Undoしたら探索中に戻したい場合はここで上書きしてもOK
@@ -299,7 +316,7 @@ function parseStage(stage){
   }
 
   grid = lines.map(row => row.split(""));
-  hasKey = false;
+  keys = 0;
   warps = [];
   skipWarpOnce = false;  
 
@@ -351,7 +368,7 @@ function loadStage(i){
 function canEnter(x,y){
   const t = tileAt(x,y);
   if (t === CELL.WALL) return false;
-  if (t === CELL.DOOR && !hasKey) return false;
+  if (t === CELL.DOOR && keys <= 0) return false;
   if (t === CELL.HOLE) return false; // ★追加
   return true;
 }
@@ -367,11 +384,17 @@ function onEnterTile(x,y){
   const t = tileAt(x,y);
 
   if (t === CELL.KEY) {
-    hasKey = true;
+    keys += 1;
     setTile(x,y, CELL.FLOOR);
+    return;
   }
-  if (t === CELL.DOOR && hasKey) {
-    setTile(x,y, CELL.FLOOR); // 開けたら床に
+   // ドア：鍵があれば消費して開ける（床に）
+  if (t === CELL.DOOR) {
+    if (keys > 0) {
+      keys -= 1;
+      setTile(x,y, CELL.FLOOR);
+    }
+    return;
   }
     // ワープ（Wが2個以上ある時だけ動く）
   if (!skipWarpOnce && t === CELL.WARP && warps.length >= 2) {
@@ -427,7 +450,7 @@ function tryMove(dir){
   if (t === CELL.WALL) return;
 
   // ドア（鍵なし）
-  if (t === CELL.DOOR && !hasKey) return;
+  if (t === CELL.DOOR && keys <= 0) return;
 
   // ブロック：押せるなら押して進む
   if (t === CELL.BLOCK) {
@@ -482,7 +505,7 @@ function tryMove(dir){
 function render(){
   elHp.textContent = String(hp);
   elSteps.textContent = String(steps);
-  elStatus.textContent = hasKey ? `${status} 🔑` : status;
+  elStatus.textContent = keys > 0 ? `${status} 🔑x${keys}` : status;
 
   elBoard.style.setProperty("--w", w);
   elBoard.style.setProperty("--h", h);
@@ -586,6 +609,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
