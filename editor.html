@@ -287,6 +287,28 @@ ${mapPretty}
     cells[i] = val;
   }
 
+  function handlePaint(target){
+    const cellEl = target.closest(".cell");
+    if (!cellEl) return false;
+  
+    const i = parseInt(cellEl.dataset.i, 10);
+    const val = elMode.value;
+  
+    paintCell(i, val);
+  
+    // 見た目を更新
+    const c = cells[i];
+    cellEl.classList.toggle("wall", c === "1");
+    cellEl.textContent = (c === "0" || c === "1") ? "" : c;
+  
+    // P/G置き直しは全描画（前のP/Gを消す）
+    if (val === "P" || val === "G") render();
+    else updateOutput();
+  
+    return true;
+  }
+
+  
   // ドラッグ塗り（0/1だけ）
   let dragging = false;
   
