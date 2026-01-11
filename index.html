@@ -32,6 +32,34 @@
         </div>
     </div>
 
+  <!-- ===== Title Screen ===== -->
+  <section id="titleScreen" class="titleScreen">
+    <div class="titleCard">
+      <h1 class="gameTitle">HP MAZE</h1>
+      <p class="gameSub">1手ごとにHPが減る、パズル迷路。</p>
+  
+      <div class="titleBtns">
+        <button id="start" class="primary">START</button>
+        <button id="howtoBtn">遊び方</button>
+        <button id="sound" class="ghost">🔊 Sound</button>
+      </div>
+  
+      <div id="howto" class="howto" hidden>
+        <p class="howtoLine"><b>P</b> 開始 / <b>G</b> ゴール</p>
+        <p class="howtoLine"><b>1</b> 壁 / <b>0</b> 床</p>
+        <p class="howtoLine"><b>■(B)</b> ブロック（押せる）</p>
+        <p class="howtoLine"><b>O</b> 穴（ブロックを落とすと床になる）</p>
+        <p class="howtoLine"><b>K</b> 鍵（所持数+1）</p>
+        <p class="howtoLine"><b>D</b> ドア（鍵を1消費して通過）</p>
+        <p class="howtoLine"><b>^</b> トゲ（追加でHP-1）</p>
+        <p class="howtoLine"><b>W</b> ワープ（別のWへ）</p>
+        <p class="howtoNote">※スマホは矢印ボタンで操作</p>
+      </div>
+  
+      <p class="titleFooter">© You</p>
+    </div>
+  </section>
+
 
   <main class="main">
     <div id="board" class="board" aria-label="maze board"></div>
@@ -61,6 +89,7 @@
   <script src="main.js"></script>
 </body>
 </html>
+
 
 
 
