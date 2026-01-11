@@ -871,7 +871,8 @@ if (btnHowto && elHowto){
 }
 
 showTitle(); // 最初はタイトルを出す
-// loadStage(0); ← これを消す or コメントアウト
+
+
 
 
 
