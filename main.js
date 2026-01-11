@@ -174,7 +174,7 @@ const STAGES = [
   ],
 },
 
- {
+{
   name: "STAGE 10",
   hp: 38,
   map: [
@@ -833,6 +833,7 @@ if (btnSound) {
 
 // 起動
 loadStage(0);
+
 
 
 
