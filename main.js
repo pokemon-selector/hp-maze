@@ -525,6 +525,11 @@ function parseStage(stage){
   if (!foundG) throw new Error("Stage must contain G");
 }
 
+function hideTitle(){
+  document.body.classList.add("game-playing");
+}
+
+
 function loadStage(i){
   stageIndex = (i + STAGES.length) % STAGES.length;
   const stage = STAGES[stageIndex];
@@ -871,6 +876,7 @@ if (btnHowto && elHowto){
 }
 
 showTitle(); // 最初はタイトルを出す
+
 
 
 
