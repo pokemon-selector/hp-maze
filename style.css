@@ -376,3 +376,11 @@ button, .btn, .board, .controls {
   font-size: 12px;
   opacity: .7;
 }
+
+.titleScreen {
+  pointer-events: auto;
+}
+
+body.game-playing .titleScreen {
+  display: none;
+}
