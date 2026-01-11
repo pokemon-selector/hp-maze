@@ -294,6 +294,94 @@ const elStatus = document.getElementById("status");
 const btnNext = document.getElementById("new");
 const btnRestart = document.getElementById("restart");
 
+// ====== SOUND (WebAudio) ======
+let audioCtx = null;
+let soundEnabled = true;
+let bgmTimer = null;
+let bgmStep = 0;
+
+function ensureAudio(){
+  if (!soundEnabled) return false;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return true;
+}
+
+function beep({ freq=440, dur=0.08, type="sine", vol=0.15, slideTo=null } = {}){
+  if (!ensureAudio()) return;
+
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo != null) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+  o.connect(g).connect(audioCtx.destination);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+
+function playSE(name){
+  // 軽い・分かりやすい音だけ用意
+  if (name === "move")  beep({ freq: 520, dur: 0.04, type:"square", vol:0.06, slideTo: 430 });
+  if (name === "push")  beep({ freq: 180, dur: 0.07, type:"square", vol:0.10, slideTo: 120 });
+  if (name === "spike") beep({ freq: 880, dur: 0.06, type:"sawtooth", vol:0.10, slideTo: 440 });
+  if (name === "warp")  beep({ freq: 330, dur: 0.10, type:"sine", vol:0.12, slideTo: 990 });
+  if (name === "key")   beep({ freq: 660, dur: 0.08, type:"triangle", vol:0.12, slideTo: 990 });
+  if (name === "door")  beep({ freq: 220, dur: 0.10, type:"square", vol:0.12, slideTo: 160 });
+  if (name === "hole")  beep({ freq: 140, dur: 0.10, type:"square", vol:0.12, slideTo: 90 });
+  if (name === "clear") {
+    beep({ freq: 523, dur: 0.09, type:"triangle", vol:0.16, slideTo: 784 });
+    setTimeout(() => beep({ freq: 784, dur: 0.10, type:"triangle", vol:0.16, slideTo: 1046 }), 90);
+  }
+  if (name === "allclear") {
+    // ちょい派手
+    playSE("clear");
+    setTimeout(() => beep({ freq: 988, dur: 0.12, type:"triangle", vol:0.18, slideTo: 1319 }), 180);
+  }
+  if (name === "dead")  beep({ freq: 220, dur: 0.18, type:"sawtooth", vol:0.14, slideTo: 70 });
+}
+
+function startBGM(){
+  if (!ensureAudio()) return;
+  if (bgmTimer) return;
+
+  // 簡易8bitループ（軽いBGM）
+  const scale = [0, 3, 5, 7, 10, 12]; // だいたいマイナーっぽい
+  const base = 220;
+
+  bgmStep = 0;
+  bgmTimer = setInterval(() => {
+    if (!soundEnabled || !audioCtx) return;
+
+    const s = scale[bgmStep % scale.length];
+    const freq = base * Math.pow(2, s / 12);
+
+    // 2音を交互に鳴らすだけでもBGM感出る
+    beep({ freq, dur: 0.08, type:"square", vol:0.03 });
+    if (bgmStep % 2 === 0) beep({ freq: freq/2, dur: 0.06, type:"triangle", vol:0.02 });
+
+    bgmStep++;
+  }, 180);
+}
+
+function stopBGM(){
+  if (bgmTimer) clearInterval(bgmTimer);
+  bgmTimer = null;
+}
+
+function setSoundUI(){
+  const btn = document.getElementById("sound");
+  if (!btn) return;
+  btn.textContent = soundEnabled ? "🔊 Sound" : "🔇 Sound";
+}
+
 
 // ====== Overlay（クリア/失敗演出） ======
 const overlay = document.createElement("div");
@@ -493,6 +581,7 @@ function checkGoalOrDead(){
   }
 }
 function tryMove(dir){
+  startBGM();
   if (!status.startsWith("探索中")) return;
   if (hp <= 0) { checkGoalOrDead(); render(); return; }
 
@@ -537,6 +626,10 @@ function tryMove(dir){
   
     player.x = nx;
     player.y = ny;
+    
+    playSE("move");
+    if (t === CELL.SPIKE) playSE("spike");
+
   
     const landed = tileAt(player.x, player.y);
     const extra = (landed === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
@@ -670,8 +763,20 @@ window.addEventListener("keydown", (e)=>{
 document.getElementById("restart").addEventListener("click", ()=>loadStage(stageIndex));
 document.getElementById("new").addEventListener("click", ()=>loadStage(stageIndex + 1));
 
+const btnSound = document.getElementById("sound");
+if (btnSound) {
+  setSoundUI();
+  btnSound.addEventListener("click", () => {
+    soundEnabled = !soundEnabled;
+    if (!soundEnabled) stopBGM();
+    setSoundUI();
+    if (soundEnabled) { ensureAudio(); startBGM(); }
+  });
+}
+
 // 起動
 loadStage(0);
+
 
 
 
