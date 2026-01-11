@@ -316,20 +316,37 @@ const ovRetry = overlay.querySelector("#ovRetry");
 const ovNext  = overlay.querySelector("#ovNext");
 
 ovRetry.addEventListener("click", () => loadStage(stageIndex));
-ovNext.addEventListener("click", () => loadStage(stageIndex + 1));
+ovNext.addEventListener("click", () => {
+  const isLast = (stageIndex === STAGES.length - 1);
+  loadStage(isLast ? 0 : stageIndex + 1);
+});
+
 
 function showOverlay(kind){
+  const isLast = (stageIndex === STAGES.length - 1);
+
   if (kind === "clear") {
-    ovTitle.textContent = "CLEAR!";
-    ovText.textContent = "次へで次のステージに進めます。";
-    ovNext.disabled = false;
+    if (isLast) {
+      ovTitle.textContent = "ALL CLEAR!";
+      ovText.textContent = "全ステージクリア！遊んでくれてありがとう。";
+      ovNext.textContent = "最初から";
+      ovNext.disabled = false;
+    } else {
+      ovTitle.textContent = "CLEAR!";
+      ovText.textContent = "次へで次のステージに進めます。";
+      ovNext.textContent = "次へ";
+      ovNext.disabled = false;
+    }
   } else if (kind === "dead") {
     ovTitle.textContent = "FAILED";
     ovText.textContent = "HPが0になりました。やり直そう。";
-    ovNext.disabled = true; // 失敗時は次へ無効（好みで変えてOK）
+    ovNext.textContent = "次へ";
+    ovNext.disabled = true; // 失敗時は次へ無効
   }
+
   overlay.classList.add("show");
 }
+
 
 function hideOverlay(){
   overlay.classList.remove("show");
@@ -406,6 +423,7 @@ function loadStage(i){
 
   btnNext.disabled = true;
   btnNext.classList.remove("primary");
+  btnNext.textContent = "次へ";
 }
 
 function canEnter(x,y){
@@ -464,8 +482,10 @@ function checkGoalOrDead(){
     setStatus(`クリア！: ${STAGES[stageIndex].name}`);
     btnNext.disabled = false;
     btnNext.classList.add("primary");
+    btnNext.textContent = (stageIndex === STAGES.length - 1) ? "最初から" : "次へ";
     return;
   }
+
   if (hp <= 0) {
     setStatus(`力尽きた…: ${STAGES[stageIndex].name}`);
     btnNext.disabled = true;
@@ -652,6 +672,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
