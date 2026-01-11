@@ -205,7 +205,7 @@ function snapshot(){
     goal: { ...goal },
     w, h,
     hp, steps,
-    key,
+    keys,
     status,
   };
 }
@@ -609,6 +609,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
