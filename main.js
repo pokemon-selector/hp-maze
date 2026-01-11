@@ -419,20 +419,49 @@ function showOverlay(kind){
       ovText.textContent = "全ステージクリア！遊んでくれてありがとう。";
       ovNext.textContent = "最初から";
       ovNext.disabled = false;
+      ovTitle.classList.add("allclearTitle");
+      spawnConfetti();
+
     } else {
       ovTitle.textContent = "CLEAR!";
       ovText.textContent = "次へで次のステージに進めます。";
       ovNext.textContent = "次へ";
       ovNext.disabled = false;
+      ovTitle.classList.remove("allclearTitle");
     }
   } else if (kind === "dead") {
     ovTitle.textContent = "FAILED";
     ovText.textContent = "HPが0になりました。やり直そう。";
     ovNext.textContent = "次へ";
+    ovTitle.classList.remove("allclearTitle");
     ovNext.disabled = true; // 失敗時は次へ無効
   }
 
   overlay.classList.add("show");
+}
+
+function spawnConfetti(){
+  // 既存があれば消す
+  document.querySelectorAll(".confetti").forEach(x => x.remove());
+
+  const wrap = document.createElement("div");
+  wrap.className = "confetti";
+
+  const N = 60;
+  for (let i=0;i<N;i++){
+    const p = document.createElement("i");
+    p.style.left = Math.random()*100 + "vw";
+    p.style.animationDuration = (1.3 + Math.random()*1.2) + "s";
+    p.style.animationDelay = (Math.random()*0.15) + "s";
+    // 色指定はしてない（あなたのポリシー次第で後で付けてもOK）
+    // 代わりに明るさをランダム
+    const gray = 200 + Math.floor(Math.random()*55);
+    p.style.background = `rgb(${gray},${gray},${gray})`;
+    wrap.appendChild(p);
+  }
+
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 2600);
 }
 
 
@@ -532,38 +561,45 @@ function consumeStep(extra=0){
 function onEnterTile(x,y){
   const t = tileAt(x,y);
 
+  // 鍵：拾ったら+1して床に
   if (t === CELL.KEY) {
     keys += 1;
     setTile(x,y, CELL.FLOOR);
+    playSE("key");
     return;
   }
-   // ドア：鍵があれば消費して開ける（床に）
+
+  // ドア：鍵があれば消費して開ける（床に）
+  // ※ canEnter / tryMove 側で鍵0なら入れないので基本ここは通る時点で keys>0 のはず
   if (t === CELL.DOOR) {
     if (keys > 0) {
       keys -= 1;
       setTile(x,y, CELL.FLOOR);
+      playSE("door");
     }
     return;
   }
-    // ワープ（Wが2個以上ある時だけ動く）
+
+  // ワープ（Wが2個以上ある時だけ動く）
   if (!skipWarpOnce && t === CELL.WARP && warps.length >= 2) {
-    // 今いるW以外のやつへ飛ぶ（2個想定）
     const dest = (warps[0].x === x && warps[0].y === y) ? warps[1] : warps[0];
 
-    // 目的地が同じなら何もしない（保険）
     if (dest && (dest.x !== x || dest.y !== y)) {
       player.x = dest.x;
       player.y = dest.y;
 
+      playSE("warp");
+
       // このターンは連鎖ワープしない
       skipWarpOnce = true;
     }
-  } else {
-    // 次のターンはワープOKに戻す
-    skipWarpOnce = false;
+    return;
   }
 
+  // 次のターンはワープOKに戻す
+  skipWarpOnce = false;
 }
+
 
 function checkGoalOrDead(){
   if (player.x === goal.x && player.y === goal.y) {
@@ -580,8 +616,10 @@ function checkGoalOrDead(){
     btnNext.classList.remove("primary");
   }
 }
+
 function tryMove(dir){
   startBGM();
+
   if (!status.startsWith("探索中")) return;
   if (hp <= 0) { checkGoalOrDead(); render(); return; }
 
@@ -610,53 +648,61 @@ function tryMove(dir){
     const by = ny + delta.dy;
     const bt = tileAt(bx, by);
 
-    // 押し先が床のみOK
     // 押し先が床 or 穴ならOK
-  if (bt === CELL.FLOOR || bt === CELL.HOLE) {
-    pushHistory();
-  
-    if (bt === CELL.HOLE) {
-      // 穴に落ちる → 床になる
-      setTile(bx, by, CELL.FLOOR);
-    } else {
-      setTile(bx, by, CELL.BLOCK);
+    if (bt === CELL.FLOOR || bt === CELL.HOLE) {
+      pushHistory();
+
+      // ★SE：押した
+      playSE("push");
+      if (bt === CELL.HOLE) playSE("hole");
+
+      if (bt === CELL.HOLE) {
+        // 穴に落ちる → 床になる（ブロック消滅）
+        setTile(bx, by, CELL.FLOOR);
+      } else {
+        setTile(bx, by, CELL.BLOCK);
+      }
+
+      setTile(nx, ny, CELL.FLOOR);
+
+      player.x = nx;
+      player.y = ny;
+
+      const landed = tileAt(player.x, player.y); // ブロックを押して進んだ先の床
+      const extra = (landed === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
+      consumeStep(extra);
+
+      // ★SE：スパイクを踏んだら
+      if (landed === CELL.SPIKE) playSE("spike");
+
+      onEnterTile(player.x, player.y);
+      checkGoalOrDead();
+      render();
     }
-  
-    setTile(nx, ny, CELL.FLOOR);
-  
-    player.x = nx;
-    player.y = ny;
-    
-    playSE("move");
-    if (t === CELL.SPIKE) playSE("spike");
-
-  
-    const landed = tileAt(player.x, player.y);
-    const extra = (landed === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
-    consumeStep(extra);
-  
-    onEnterTile(player.x, player.y);
-    checkGoalOrDead();
-    render();
-  }
-
     return;
   }
 
   // 通常移動
   if (!canEnter(nx, ny)) return;
-  
+
   pushHistory();
 
-  player.x = nx; player.y = ny;
+  player.x = nx;
+  player.y = ny;
 
   const extra = (t === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
   consumeStep(extra);
+
+  // ★SE：移動成功
+  playSE("move");
+  // ★SE：スパイク踏んだ
+  if (t === CELL.SPIKE) playSE("spike");
 
   onEnterTile(nx, ny);
   checkGoalOrDead();
   render();
 }
+
 
 function render(){
   elHp.textContent = String(hp);
@@ -776,6 +822,7 @@ if (btnSound) {
 
 // 起動
 loadStage(0);
+
 
 
 
