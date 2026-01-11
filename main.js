@@ -88,6 +88,25 @@ const STAGES = [
   
 ];
 
+
+function getStageFromHash(){
+  const m = location.hash.match(/stage=([^&]+)/);
+  if (!m) return null;
+  try {
+    return JSON.parse(decodeURIComponent(m[1]));
+  } catch (e) {
+    console.error("Invalid stage in hash", e);
+    return null;
+  }
+}
+
+const custom = getStageFromHash();
+if (custom && custom.map && custom.hp != null) {
+  // テストプレイ時はこのステージ1つだけにする
+  STAGES.length = 0;
+  STAGES.push(custom);
+}
+
 // ====== 状態 ======
 let stageIndex = 0;
 
@@ -467,6 +486,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
