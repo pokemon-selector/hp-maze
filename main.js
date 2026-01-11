@@ -9,6 +9,7 @@ const CELL = {
   KEY: "K",
   DOOR: "D",
   SPIKE: "^",
+  WARP: "W",
 };
 
 // ====== ステージ ======
@@ -85,7 +86,24 @@ const STAGES = [
     "111111111111111"
   ],
 },
-  
+
+
+  {
+  name: "STAGE 5",
+  hp: 35,
+  map: [
+    "111111111111111",
+    "1P11111111111G1",
+    "101111111111101",
+    "101111111111101",
+    "100B0BBB000BB01",
+    "10B0B000B0B0001",
+    "100B00B00BB0001",
+    "100BB00B000BB01",
+    "10000BB0B0BB001",
+    "111111111111111"
+  ],
+},
 ];
 
 
@@ -119,6 +137,9 @@ let hp = 0;
 let steps = 0;
 let status = "探索中";
 let hasKey = false;
+let warps = []; // [{x,y}, {x,y}] を想定
+let skipWarpOnce = false; // ワープ後に連鎖しないため
+
 
 // Undo用：履歴
 const history = []; // 配列の末尾が最新
@@ -243,6 +264,8 @@ function parseStage(stage){
 
   grid = lines.map(row => row.split(""));
   hasKey = false;
+  warps = [];
+  skipWarpOnce = false;  
 
   // P/G を探して床に置換
   let foundP = false, foundG = false;
@@ -250,6 +273,11 @@ function parseStage(stage){
   for (let y=0; y<h; y++){
     for (let x=0; x<w; x++){
       const c = grid[y][x];
+
+      if (c === CELL.WARP){
+        warps.push({ x, y });
+      }
+
       if (c === CELL.PLAYER){
         player = { x, y };
         grid[y][x] = CELL.FLOOR;
@@ -257,12 +285,12 @@ function parseStage(stage){
       }
       if (c === CELL.GOAL){
         goal = { x, y };
-        grid[y][x] = CELL.FLOOR; // ゴールは床として扱い、描画だけGにする
+        grid[y][x] = CELL.FLOOR;
         foundG = true;
       }
     }
   }
-
+ 
   if (!foundP) throw new Error("Stage must contain P");
   if (!foundG) throw new Error("Stage must contain G");
 }
@@ -307,6 +335,24 @@ function onEnterTile(x,y){
   if (t === CELL.DOOR && hasKey) {
     setTile(x,y, CELL.FLOOR); // 開けたら床に
   }
+    // ワープ（Wが2個以上ある時だけ動く）
+  if (!skipWarpOnce && t === CELL.WARP && warps.length >= 2) {
+    // 今いるW以外のやつへ飛ぶ（2個想定）
+    const dest = (warps[0].x === x && warps[0].y === y) ? warps[1] : warps[0];
+
+    // 目的地が同じなら何もしない（保険）
+    if (dest && (dest.x !== x || dest.y !== y)) {
+      player.x = dest.x;
+      player.y = dest.y;
+
+      // このターンは連鎖ワープしない
+      skipWarpOnce = true;
+    }
+  } else {
+    // 次のターンはワープOKに戻す
+    skipWarpOnce = false;
+  }
+
 }
 
 function checkGoalOrDead(){
@@ -415,7 +461,10 @@ function render(){
         cell.textContent = "D";
       } else if (base === CELL.SPIKE) {
         cell.textContent = "^";
+      } else if (base === CELL.WARP) {
+        cell.textContent = "W";
       }
+
 
       // プレイヤー最前面
       if (x === player.x && y === player.y) {
@@ -486,6 +535,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
