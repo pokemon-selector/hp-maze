@@ -528,10 +528,18 @@ function parseStage(stage){
 function loadStage(i){
   stageIndex = (i + STAGES.length) % STAGES.length;
   const stage = STAGES[stageIndex];
-  
+
   history.length = 0;
 
-  parseStage(stage);
+  try {
+    parseStage(stage);
+  } catch (e) {
+    console.error(e);
+    alert(`ステージ読み込みエラー: ${stage.name}\n${e.message}`);
+    // 壊れてたらステージ1に戻す（任意）
+    // if (stageIndex !== 0) loadStage(0);
+    return;
+  }
 
   hp = stage.hp;
   steps = 0;
@@ -833,6 +841,7 @@ if (btnSound) {
 
 // 起動
 loadStage(0);
+
 
 
 
