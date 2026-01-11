@@ -176,27 +176,27 @@ const STAGES = [
 
 {
   name: "STAGE 10",
-  hp: 38,
+  hp: 150,
   map: [
     "11111111111111111111",
-    "1P000001111111111111",
-    "11111100111111111111",
-    "11111100O0B000000011",
-    "11111100111111111111",
-    "11111100111111111111",
-    "11111100000001111111",
-    "11111101111101111111",
-    "11111101^^^^01111111",
-    "11111101000001111111",
-    "11111101111101111111",
-    "11111100000000000111",
-    "11111111111111110111",
-    "11111111111111110111",
-    "11111111111111110W11",
-    "11111111111111111111",
-    "11W00000000000000011",
-    "11011111111111111111",
-    "11K0000000000000D0G1",
+    "1P000000000100000011",
+    "10000000B00100000011",
+    "1000000B0B0D00000011",
+    "10001100B00100000011",
+    "10001100000100000011",
+    "10001111111111OO1111",
+    "100011110000B000B001",
+    "100011110000B000B001",
+    "1^1O1111OOO111111111",
+    "1^101111000111111111",
+    "1^101111000O000000W1",
+    "1^101111111111111111",
+    "1^101111111111111111",
+    "1^1011100^00^000^0^1",
+    "1^101110^^^0^0000^01",
+    "1^1011100^00^^^0^0^1",
+    "1^1011100^00^0^00001",
+    "1^KO111W0000000000G1",
     "11111111111111111111"
   ],
 }, 
@@ -839,8 +839,41 @@ if (btnSound) {
   });
 }
 
-// 起動
-loadStage(0);
+// ===== Title Screen control =====
+const elTitle = document.getElementById("titleScreen");
+const btnStart = document.getElementById("start");
+const btnHowto = document.getElementById("howtoBtn");
+const elHowto = document.getElementById("howto");
+
+// タイトル表示/非表示
+function showTitle(){
+  if (elTitle) elTitle.classList.remove("hidden");
+}
+function hideTitle(){
+  if (elTitle) elTitle.classList.add("hidden");
+}
+
+// STARTでゲーム開始
+if (btnStart){
+  btnStart.addEventListener("click", () => {
+    // スマホ対策：ここで音の許可を取る
+    startBGM();
+    hideTitle();
+    loadStage(0);
+  });
+}
+
+// 遊び方 開閉
+if (btnHowto && elHowto){
+  btnHowto.addEventListener("click", () => {
+    elHowto.hidden = !elHowto.hidden;
+  });
+}
+
+showTitle(); // 最初はタイトルを出す
+// loadStage(0); ← これを消す or コメントアウト
+
+
 
 
 
