@@ -124,6 +124,7 @@
     <button id="clear">全消去</button>
     <button id="invert01">0/1反転</button>
     <button id="copy">出力をコピー</button>
+    <button id="play">テストプレイ</button>
   </div>
 
   <div class="row">
@@ -384,6 +385,36 @@ ${mapPretty}
       document.execCommand("copy");
       alert("コピーしました！（フォールバック）");
     }
+  });
+
+  document.getElementById("play").addEventListener("click", () => {
+    // P/Gチェック
+    if (!validateStage()) {
+      alert("P と G を置いてからテストしてください。");
+      return;
+    }
+  
+    // 現在のmapを組み立て（updateOutputと同じロジック）
+    const lines = [];
+    for (let y=0;y<H;y++){
+      let row = "";
+      for (let x=0;x<W;x++) row += cells[idx(x,y)];
+      lines.push(row);
+    }
+  
+    const stage = {
+      name: elStageName.value || "TEST",
+      hp: Number.isFinite(parseInt(elStageHp.value, 10)) ? parseInt(elStageHp.value, 10) : 0,
+      map: lines
+    };
+  
+    const payload = encodeURIComponent(JSON.stringify(stage));
+  
+    // ★ゲームのURLに合わせてここを変える
+    // 例：同じリポジトリ内で game.html を開くなら "index.html"
+    const url = `index.html#stage=${payload}`;
+  
+    window.open(url, "_blank");
   });
 
   // name/hp変化で出力更新
