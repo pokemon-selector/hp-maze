@@ -189,7 +189,7 @@ let goal = { x: 1, y: 1 };
 let hp = 0;
 let steps = 0;
 let status = "探索中";
-let hasKey = 0;
+let keys = 0;
 let warps = []; // [{x,y}, {x,y}] を想定
 let skipWarpOnce = false; // ワープ後に連鎖しないため
 
@@ -609,6 +609,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
