@@ -10,6 +10,7 @@ const CELL = {
   DOOR: "D",
   SPIKE: "^",
   WARP: "W",
+  HOLE: "O",
 };
 
 // ====== ステージ ======
@@ -351,8 +352,10 @@ function canEnter(x,y){
   const t = tileAt(x,y);
   if (t === CELL.WALL) return false;
   if (t === CELL.DOOR && !hasKey) return false;
+  if (t === CELL.HOLE) return false; // ★追加
   return true;
 }
+
 
 function consumeStep(extra=0){
   steps += 1;
@@ -433,21 +436,31 @@ function tryMove(dir){
     const bt = tileAt(bx, by);
 
     // 押し先が床のみOK
-    if (bt === CELL.FLOOR) {
-      pushHistory();
+    // 押し先が床 or 穴ならOK
+  if (bt === CELL.FLOOR || bt === CELL.HOLE) {
+    pushHistory();
+  
+    if (bt === CELL.HOLE) {
+      // 穴に落ちる → 床になる
+      setTile(bx, by, CELL.FLOOR);
+    } else {
       setTile(bx, by, CELL.BLOCK);
-      setTile(nx, ny, CELL.FLOOR);
-
-      player.x = nx; player.y = ny;
-
-      const landed = tileAt(player.x, player.y);
-      const extra = (landed === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
-      consumeStep(extra);
-
-      onEnterTile(player.x, player.y);
-      checkGoalOrDead();
-      render();
     }
+  
+    setTile(nx, ny, CELL.FLOOR);
+  
+    player.x = nx;
+    player.y = ny;
+  
+    const landed = tileAt(player.x, player.y);
+    const extra = (landed === CELL.SPIKE) ? SPIKE_EXTRA_COST : 0;
+    consumeStep(extra);
+  
+    onEnterTile(player.x, player.y);
+    checkGoalOrDead();
+    render();
+  }
+
     return;
   }
 
@@ -498,7 +511,10 @@ function render(){
         cell.textContent = "^";
       } else if (base === CELL.WARP) {
         cell.textContent = "W";
+      } else if (base === CELL.HOLE) {
+        cell.textContent = "O";
       }
+
 
 
       // プレイヤー最前面
@@ -570,6 +586,7 @@ document.getElementById("new").addEventListener("click", ()=>loadStage(stageInde
 
 // 起動
 loadStage(0);
+
 
 
 
