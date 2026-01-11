@@ -149,6 +149,9 @@
       </p>
     </div>
 
+    <div id="stats" class="hintBox" style="margin-bottom:10px;"></div>
+
+    
     <div>
       <div id="warn" class="warnBox" style="display:none;"></div>
       <textarea id="out" readonly></textarea>
@@ -166,6 +169,7 @@
   const elStageName = document.getElementById("stageName");
   const elStageHp = document.getElementById("stageHp");
   const elWarn = document.getElementById("warn");
+  const elStats = document.getElementById("stats");
 
 
   let W = 10, H = 10;
@@ -228,6 +232,93 @@
     }
   }
 
+  function parseForSolve(){
+    // cells[] から P/G 位置とコストマップを作る
+    let px=-1, py=-1, gx=-1, gy=-1;
+    const cost = Array.from({length:H}, () => Array(W).fill(Infinity));
+  
+    for (let y=0;y<H;y++){
+      for (let x=0;x<W;x++){
+        const c = cells[idx(x,y)];
+        if (c === "1") cost[y][x] = Infinity;          // 壁
+        else if (c === "^") cost[y][x] = 2;            // スパイク：入った手の消費が2
+        else cost[y][x] = 1;                           // それ以外：入った手の消費が1
+  
+        if (c === "P") { px=x; py=y; }
+        if (c === "G") { gx=x; gy=y; }
+      }
+    }
+    return {px,py,gx,gy,cost};
+  }
+  
+  function computeMinCost(){
+    const {px,py,gx,gy,cost} = parseForSolve();
+    if (px<0 || gx<0) return null;
+  
+    // Dijkstra（グリッド）
+    const dist = Array.from({length:H}, () => Array(W).fill(Infinity));
+    const stepsMin = Array.from({length:H}, () => Array(W).fill(Infinity));
+  
+    dist[py][px] = 0;
+    stepsMin[py][px] = 0;
+  
+    const pq = [{d:0, s:0, x:px, y:py}];
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  
+    while (pq.length){
+      // 超小規模なので毎回最小を取り出す簡易版でOK
+      pq.sort((a,b)=> a.d - b.d || a.s - b.s);
+      const cur = pq.shift();
+      if (!cur) break;
+  
+      const {d,s,x,y} = cur;
+      if (d !== dist[y][x]) continue;
+      if (x === gx && y === gy) return {minHpCost:d, minSteps:s};
+  
+      for (const [dx,dy] of dirs){
+        const nx = x+dx, ny = y+dy;
+        if (nx<0||ny<0||nx>=W||ny>=H) continue;
+        if (!Number.isFinite(cost[ny][nx])) continue; // 壁
+  
+        const nd = d + cost[ny][nx]; // 入ったマスのコスト
+        const ns = s + 1;
+  
+        // HP消費を最優先、同点なら歩数が少ない方
+        if (nd < dist[ny][nx] || (nd === dist[ny][nx] && ns < stepsMin[ny][nx])) {
+          dist[ny][nx] = nd;
+          stepsMin[ny][nx] = ns;
+          pq.push({d:nd, s:ns, x:nx, y:ny});
+        }
+      }
+    }
+  
+    return {minHpCost:Infinity, minSteps:Infinity};
+  }
+
+function updateStats(){
+  // P/G が無いなら表示しない
+  const ok = validateStage();
+  if (!ok) {
+    elStats.textContent = "P と G を置くと、最短の歩数/消費HPを表示します。";
+    return;
+  }
+
+  const res = computeMinCost();
+  if (!res || !Number.isFinite(res.minHpCost)) {
+    elStats.textContent = "到達不可：P から G までの道がありません。";
+    return;
+  }
+
+  const stageHp = parseInt(elStageHp.value, 10);
+  const hpSafe = Number.isFinite(stageHp) ? stageHp : 0;
+  const canClear = res.minHpCost <= hpSafe;
+
+  elStats.innerHTML =
+    `最短歩数: <b>${res.minSteps}</b><br>` +
+    `最小消費HP: <b>${res.minHpCost}</b><br>` +
+    `HP ${hpSafe} でクリア: <b>${canClear ? "可能" : "不可"}</b>`;
+}
+
   
   function updateOutput(){
     const lines = [];
@@ -255,7 +346,7 @@ ${mapPretty}
 },`;
  
   validateStage();
-
+  updateStats();
   
   }
 
