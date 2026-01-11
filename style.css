@@ -297,3 +297,82 @@ button, .btn, .board, .controls {
     opacity: .95;
   }
 }
+
+/* ===== Title Screen ===== */
+.titleScreen{
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(10,12,18,.92);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+}
+.titleScreen.hidden{ display:none; }
+
+.titleCard{
+  width: min(520px, 100%);
+  border: 1px solid #2a3140;
+  border-radius: 18px;
+  background: #121622;
+  padding: 18px 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  text-align: center;
+}
+
+.gameTitle{
+  margin: 4px 0 6px;
+  font-size: 34px;
+  letter-spacing: .08em;
+}
+.gameSub{
+  margin: 0 0 14px;
+  opacity: .85;
+  line-height: 1.4;
+}
+
+.titleBtns{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.titleBtns button{
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #232833;
+  color: #fff;
+  font-weight: 800;
+}
+.titleBtns button:active{ transform: translateY(1px); }
+
+.titleBtns .primary{
+  background: #3a6df0;
+}
+.titleBtns .ghost{
+  background: transparent;
+  border: 1px solid #2a3140;
+}
+
+.howto{
+  text-align: left;
+  margin: 10px auto 0;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid #2a3140;
+  background: #0b0e15;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.howtoLine{ margin: 4px 0; }
+.howtoNote{ margin: 8px 0 0; opacity:.8; }
+
+.titleFooter{
+  margin: 12px 0 0;
+  font-size: 12px;
+  opacity: .7;
+}
