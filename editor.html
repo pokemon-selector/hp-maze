@@ -287,59 +287,9 @@ ${mapPretty}
     cells[i] = val;
   }
 
-  // ドラッグ塗り
+  // ドラッグ塗り（0/1だけ）
   let dragging = false;
-
-  function handlePaint(target){
-    const cellEl = target.closest(".cell");
-    if (!cellEl) return false;
-    const i = parseInt(cellEl.dataset.i, 10);
-    const val = elMode.value;
-    const isPaintableDrag = (val === "0" || val === "1");
-
-
-    paintCell(i, val);
-
-    const c = cells[i];
-    cellEl.classList.toggle("wall", c === "1");
-    cellEl.textContent = (c === "0" || c === "1") ? "" : c;
-
-    // P/G置き直しは全描画（前のP/Gを消す）
-    if (val === "P" || val === "G") render();
-    else updateOutput();
-
-    return true;
-  }
-
-    elGrid.addEventListener("pointerdown", (e) => {
-    if (!handlePaint(e.target)) return;
   
-    const val = elMode.value;
-  
-    // ★壁/床(1/0)の時だけドラッグ開始
-    if (val === "0" || val === "1") {
-      dragging = true;
-  
-      // 指が外に出ても pointerup が取れる
-      try { elGrid.setPointerCapture(e.pointerId); } catch {}
-    } else {
-      dragging = false; // タイル系はクリック1回だけ
-    }
-  
-    e.preventDefault();
-  });
-
-
-  elGrid.addEventListener("pointermove", (e) => {
-  if (!dragging) return;
-  // ★壁/床(1/0)の時だけドラッグ塗り
-  const val = elMode.value;
-  if (val !== "0" && val !== "1") return;
-  handlePaint(e.target);
-});
-
-  
-  // 解除系を増やす（ここが肝）
   function stopDrag(e){
     dragging = false;
     if (e && e.pointerId != null) {
@@ -347,10 +297,41 @@ ${mapPretty}
     }
   }
   
+  elGrid.addEventListener("pointerdown", (e) => {
+    // 左クリック/指だけ（右クリック等を除外したければ）
+    // if (e.button != null && e.button !== 0) return;
+  
+    // まず1マス塗る（クリック設置）
+    if (!handlePaint(e.target)) return;
+  
+    const val = elMode.value;
+  
+    // ★0/1の時だけドラッグ開始
+    if (val === "0" || val === "1") {
+      dragging = true;
+      try { elGrid.setPointerCapture(e.pointerId); } catch {}
+    } else {
+      dragging = false; // タイルはクリックのみ
+    }
+  
+    e.preventDefault();
+  });
+  
+  elGrid.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+  
+    // ★0/1の時だけドラッグ塗り
+    const val = elMode.value;
+    if (val !== "0" && val !== "1") return;
+  
+    handlePaint(e.target);
+  });
+  
   elGrid.addEventListener("pointerup", stopDrag);
   elGrid.addEventListener("pointercancel", stopDrag);
   elGrid.addEventListener("pointerleave", stopDrag);
   window.addEventListener("blur", () => { dragging = false; });
+
 
 
   document.getElementById("build").addEventListener("click", build);
